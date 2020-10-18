@@ -45,3 +45,22 @@ select count(txnno),category from txn_parquet group by category;
 select count(txnno),category from txn_orc group by category; 
 --Time taken to retrieve data from HDFS: 12.531 seconds, Fetched: 15 row(s) => ORC has more compression. So it takes more time than parquet.
 
+
+
+-- You cant retrieve the data loaded into parquet/orc/<any serialized> table location using LOAD command. Because LOAD is a mindless command, 
+-- MR is responsible for serializing and storing in HDFS as per serializer defined in table, LOAD doesnt do that. So while retriving data we get error.
+
+create table txn_orc_temp(txnno INT, txndate STRING, custno INT, amount DOUBLE, category varchar(20), product varchar(20), city varchar(20), state varchar(20), spendby varchar(20)) 
+row format delimited fields terminated by ',' lines terminated by '\n' stored as orcfile; 
+
+LOAD DATA LOCAL INPATH '/home/hduser/hive/data/txns' OVERWRITE INTO TABLE txn_orc_temp; 
+
+hive (usecase)> select * from txn_orc_temp limit 10;
+OK
+Failed with exception java.io.IOException:java.io.IOException: Malformed ORC file hdfs://localhost:54310/user/hive/warehouse/usecase.db/txn_orc_temp/txns. Invalid postscript.
+Time taken: 0.047 seconds
+hive (usecase)>
+
+
+
+
